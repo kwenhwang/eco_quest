@@ -37,7 +37,7 @@ exports.up = function (knex) {
   
   exports.down = function (knex) {
     return knex.schema
-      .dropTable('game_players')
-      .dropTable('games')
-      .dropTable('users');
+    .dropTableIfExists('game_players')
+    .dropTableIfExists('games')
+    .dropTableIfExists('users');
   };
