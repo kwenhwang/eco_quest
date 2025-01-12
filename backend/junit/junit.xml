@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="1" failures="1" errors="0" time="25.651">
+  <testsuite name="GameController" errors="0" failures="1" skipped="0" timestamp="2025-01-12T00:13:18" time="2.515" tests="1">
+    <testcase classname="GameController should create a new game" name="GameController should create a new game" time="0.008">
+      <failure>TypeError: app.address is not a function
+    at Test.serverAddress (C:\Users\sword33\Documents\project\ECO_QUEST\backend\node_modules\supertest\lib\test.js:46:22)
+    at new Test (C:\Users\sword33\Documents\project\ECO_QUEST\backend\node_modules\supertest\lib\test.js:34:14)
+    at Object.obj.&lt;computed&gt; [as post] (C:\Users\sword33\Documents\project\ECO_QUEST\backend\node_modules\supertest\index.js:43:18)
+    at post (C:\Users\sword33\Documents\project\ECO_QUEST\backend\tests\controllers\GameController.test.js:7:8)
+    at call (C:\Users\sword33\Documents\project\ECO_QUEST\backend\tests\controllers\GameController.test.js:2:1)
+    at Generator.tryCatch (C:\Users\sword33\Documents\project\ECO_QUEST\backend\tests\controllers\GameController.test.js:2:1)
+    at Generator._invoke [as next] (C:\Users\sword33\Documents\project\ECO_QUEST\backend\tests\controllers\GameController.test.js:2:1)
+    at asyncGeneratorStep (C:\Users\sword33\Documents\project\ECO_QUEST\backend\tests\controllers\GameController.test.js:2:1)
+    at asyncGeneratorStep (C:\Users\sword33\Documents\project\ECO_QUEST\backend\tests\controllers\GameController.test.js:2:1)
+    at _next (C:\Users\sword33\Documents\project\ECO_QUEST\backend\tests\controllers\GameController.test.js:2:1)
+    at new Promise (&lt;anonymous&gt;)
+    at Object.&lt;anonymous&gt; (C:\Users\sword33\Documents\project\ECO_QUEST\backend\tests\controllers\GameController.test.js:2:1)
+    at Promise.then.completed (C:\Users\sword33\Documents\project\ECO_QUEST\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\sword33\Documents\project\ECO_QUEST\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\sword33\Documents\project\ECO_QUEST\node_modules\jest-circus\build\run.js:316:40)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at _runTest (C:\Users\sword33\Documents\project\ECO_QUEST\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\sword33\Documents\project\ECO_QUEST\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\sword33\Documents\project\ECO_QUEST\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\sword33\Documents\project\ECO_QUEST\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\sword33\Documents\project\ECO_QUEST\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\sword33\Documents\project\ECO_QUEST\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\sword33\Documents\project\ECO_QUEST\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\sword33\Documents\project\ECO_QUEST\node_modules\jest-runner\build\runTest.js:444:34)
+    at Object.worker (C:\Users\sword33\Documents\project\ECO_QUEST\node_modules\jest-runner\build\testWorker.js:106:12)</failure>
+    </testcase>
+  </testsuite>
+</testsuites>
