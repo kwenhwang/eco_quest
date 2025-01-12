@@ -1,66 +1,110 @@
-require('dotenv').config();
-const express = require('express');
-const app = express();
+// backend/tests/integration/game.test.js
 const request = require('supertest');
-const db = require('../../src/db');
+const app = require('../../src/index');
+const { setupTestDB } = require('../setup');
 
-// 요청 로깅 미들웨어
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
-  next();
-});
-
-// 라우터 불러오기
-const router = require('./routes'); // 전체 라우터 파일
-
-// 미들웨어 설정
-app.use(express.json());
-
-// API 라우터 연결
-app.use('/api', router);
-
-// DB 연결 확인
-db.raw('SELECT 1+1 AS result')
-  .then((res) => console.log('DB 연결 성공:', res.rows))
-  .catch((err) => console.error('DB 연결 실패:', err.message));
-
-// 서버 실행 (테스트 환경에서는 동적으로 포트 할당)
-if (process.env.NODE_ENV !== 'test') {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`서버 실행 중: http://localhost:${PORT}`);
-  });
-}
-
-beforeAll(async () => {
-  await db.migrate.latest(); // 최신 마이그레이션 실행
-  await db.seed.run();       // 초기 데이터 삽입
-});
-
-afterAll(async () => {
-  await db.destroy(); // 데이터베이스 연결 해제
-});
+// 테스트 DB 설정 적용
+setupTestDB();
 
 describe('Game API Tests', () => {
-  it('should create a new game', async () => {
-    const response = await request(app)
-      .post('/api/games')
+  let testUser;
+  
+  // 각 테스트 전에 필요한 기본 데이터 생성
+  beforeEach(async () => {
+    // 테스트용 유저 생성 (게임 생성/참여에 필요할 경우)
+    testUser = await request(app)
+      .post('/users/register')
       .send({
+        username: 'testuser',
+        password: 'testpass',
+        email: 'test@example.com'
+      });
+
+    // 테스트용 게임 생성 (상태 조회 테스트 등에 필요)
+    await request(app)
+      .post('/games')
+      .send({
+        name: 'Test Game',
         mapWidth: 50,
         mapHeight: 50,
         gameMode: 'singleplayer',
-        maxPlayers: 1,
+        maxPlayers: 1
       });
-
-    expect(response.status).toBe(201);
-    expect(response.body.gameId).toBeDefined();
   });
 
-  it('should retrieve game status', async () => {
-    const response = await request(app).get('/api/games/1/status');
-    expect(response.status).toBe(200);
-    expect(response.body.pollutionLevel).toBeDefined();
+  describe('Game Creation', () => {
+    it('should create a new game', async () => {
+      const response = await request(app)
+        .post('/games')
+        .send({
+          name: 'New Test Game',
+          mapWidth: 50,
+          mapHeight: 50,
+          gameMode: 'singleplayer',
+          maxPlayers: 1
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.gameId).toBeDefined();
+    });
+  });
+
+  describe('Game Status', () => {
+    it('should retrieve game status', async () => {
+      const response = await request(app)
+        .get('/games/1/status');
+      
+      expect(response.status).toBe(200);
+      expect(response.body.pollutionLevel).toBeDefined();
+    });
+  });
+
+  describe('Game Players', () => {
+    it('should allow a user to join a game', async () => {
+      const response = await request(app)
+        .post('/games/1/join')
+        .send({
+          userId: testUser.body.userId
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+    });
+
+    it('should allow a user to leave a game', async () => {
+      // 먼저 게임 참여
+      await request(app)
+        .post('/games/1/join')
+        .send({
+          userId: testUser.body.userId
+        });
+
+      // 게임 나가기 테스트
+      const response = await request(app)
+        .post('/games/1/leave')
+        .send({
+          userId: testUser.body.userId
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+    });
+  });
+
+  describe('Game Information', () => {
+    it('should retrieve complete game information', async () => {
+      const response = await request(app)
+        .get('/games/1/info');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('id');
+      expect(response.body).toHaveProperty('name');
+      expect(response.body).toHaveProperty('mapWidth');
+      expect(response.body).toHaveProperty('mapHeight');
+      expect(response.body).toHaveProperty('gameMode');
+      expect(response.body).toHaveProperty('maxPlayers');
+      expect(response.body).toHaveProperty('pollutionLevel');
+      expect(response.body).toHaveProperty('players');
+    });
   });
 });
-
-module.exports = app; // 테스트를 위해 app을 모듈로 내보냄

@@ -1,16 +1,9 @@
 const request = require('supertest');
 const app = require('../../src/index');
-const db = require('../../src/db');
+const { setupTestDB } = require('../setup');
 
-beforeAll(async () => {
-    // 모든 마이그레이션 롤백 후 다시 실행
-  await db.schema.dropTableIfExists('users');
-  await db.migrate.latest(); // 최신 마이그레이션 실행
-});
-
-afterAll(async () => {
-  await db.destroy(); // 데이터베이스 연결 해제
-});
+// DB 초기화 설정 적용
+setupTestDB();
 
 describe('User API Tests', () => {
   it('should register a new user', async () => {
