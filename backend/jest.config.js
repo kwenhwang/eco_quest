@@ -1,3 +1,6 @@
+// jest.config.js 혹은 테스트 초기에 명시
+require('dotenv').config(); // 또는 .env.test 등 테스트용 환경파일 명시
+
 module.exports = {
   transform: {
     '^.+\\.js$': 'babel-jest',
