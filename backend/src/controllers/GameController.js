@@ -1,141 +1,105 @@
+// backend/src/controllers/GameController.js
 const Game = require('../models/Game');
-const Player = require('../models/Player');
-const Factory = require('../models/Factory');
-const PurificationFacility = require('../models/Purification');
-const knex = require('../db'); // Knex 인스턴스 불러오기
-const db = require('../db');
+const GamePlayer = require('../models/GamePlayer');
 
-// 게임 생성
 exports.createGame = async (req, res) => {
-    try {
-        const { mapWidth, mapHeight, gameMode, maxPlayers } = req.body;
+  try {
+    const { mapWidth, mapHeight, gameMode, maxPlayers } = req.body;
+    // name이나 다른 필드를 받으려면 확장
+    const newGame = await Game.createGame({ 
+      name: req.body.name || 'Default Game Name',
+      mapWidth,
+      mapHeight,
+      gameMode,
+      maxPlayers 
+    });
+    return res.status(201).json({ gameId: newGame.id });
+  } catch (error) {
+    console.error('게임 생성 오류:', error.message);
+    return res.status(500).json({ error: '게임 생성에 실패했습니다.' });
+  }
+};
 
-        // 입력 값 검증
-        if (!mapWidth || !mapHeight || !gameMode || !maxPlayers) {
-            return res.status(400).json({ error: '필수 입력값이 누락되었습니다.' });
-        }
-
-        const [newGame] = await db('games')
-            .insert({
-                mapWidth,
-                mapHeight,
-                gameMode,
-                maxPlayers,
-                status: 'waiting',
-                created_at: db.fn.now(),
-            })
-            .returning('*');
-
-        res.status(201).json({ gameId: newGame.id });
-    } catch (error) {
-        console.error('게임 생성 오류:', error.message);
-        res.status(500).json({ error: '게임 생성에 실패했습니다.' });
+exports.getGameStatus = async (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const status = await Game.getGameStatus(gameId);
+    if (!status) {
+      return res.status(404).json({ error: '게임을 찾을 수 없습니다.' });
     }
+    return res.status(200).json({ pollutionLevel: status.pollution_level });
+  } catch (error) {
+    console.error('게임 상태 조회 오류:', error.message);
+    return res.status(500).json({ error: '게임 상태 조회에 실패했습니다.' });
+  }
 };
 
 // 게임 참여
 exports.joinGame = async (req, res) => {
-    try {
-        const { gameId } = req.params;
-        const { playerId } = req.body;
-
-        const game = await db('games').where({ game_id: gameId }).first();
-        if (!game) {
-            return res.status(404).json({ error: '게임을 찾을 수 없습니다.' });
-        }
-
-        const currentPlayers = await db('game_participation').where({ game_id: gameId }).count('player_id as count').first();
-        if (currentPlayers.count >= game.max_players) {
-            return res.status(400).json({ error: '게임이 가득 찼습니다.' });
-        }
-
-        const [participation] = await db('game_participation')
-            .insert({ game_id: gameId, player_id: playerId })
-            .returning('*');
-
-        res.status(201).json(participation);
-    } catch (error) {
-        console.error('게임 참여 오류:', error.message);
-        res.status(500).json({ error: '게임 참여에 실패했습니다.' });
+  try {
+    const { gameId } = req.params;
+    // 실제로는 유저 인증(JWT 등)을 통해 userId를 가져오는 로직이 필요합니다.
+    const userId = req.body.userId; 
+    if (!userId) {
+      return res.status(400).json({ error: 'userId가 필요합니다.' });
     }
+    
+    // 모델에서 joinGame 호출
+    const result = await GamePlayer.joinGame(gameId, userId);
+    if (!result) {
+      return res.status(400).json({ error: '이미 게임에 참여 중이거나 잘못된 요청입니다.' });
+    }
+    
+    return res.status(200).json({ success: true, message: '게임 참여 성공' });
+  } catch (error) {
+    console.error('게임 참여 오류:', error.message);
+    return res.status(500).json({ error: '게임 참여에 실패했습니다.' });
+  }
 };
 
 // 게임 나가기
 exports.leaveGame = async (req, res) => {
-    try {
-        const { gameId, playerId } = req.params;
-
-        const result = await db('game_participation').where({ game_id: gameId, player_id: playerId }).del();
-        if (!result) {
-            return res.status(400).json({ error: '게임 나가기에 실패했습니다.' });
-        }
-
-        res.status(200).json({ message: '플레이어가 게임에서 나갔습니다.' });
-    } catch (error) {
-        console.error('게임 나가기 오류:', error.message);
-        res.status(500).json({ error: '게임 나가기에 실패했습니다.' });
+  try {
+    const { gameId } = req.params;
+    const userId = req.body.userId;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId가 필요합니다.' });
     }
+    
+    await GamePlayer.leaveGame(gameId, userId);
+    return res.status(200).json({ success: true, message: '게임 나가기 성공' });
+  } catch (error) {
+    console.error('게임 나가기 오류:', error.message);
+    return res.status(500).json({ error: '게임 나가기에 실패했습니다.' });
+  }
 };
 
 // 게임 정보 조회
 exports.getGameInfo = async (req, res) => {
-    try {
-        const { gameId } = req.params;
-
-        const game = await Game.getInfoWithSimulation(gameId);
-        if (!game) {
-            return res.status(404).json({ error: '게임을 찾을 수 없습니다.' });
-        }
-
-        res.status(200).json(game);
-    } catch (error) {
-        console.error('게임 정보 조회 오류:', error.message);
-        res.status(500).json({ error: '게임 정보 조회에 실패했습니다.' });
+  try {
+    const { gameId } = req.params;
+    // 게임 기본 정보
+    const game = await Game.getGameInfo(gameId);
+    if (!game) {
+      return res.status(404).json({ error: '게임을 찾을 수 없습니다.' });
     }
-};
-
-// 게임 상태 정보 조회
-exports.getGameStatus = async (req, res) => {
-    try {
-        const { gameId } = req.params;
-        console.log('Attempting to get status for game:', gameId);
-
-        const game = await db('games').where({ id: gameId }).first();
-        console.log('Found game:', game);
-
-        if (!game) {
-            console.log('Game not found');
-            return res.status(404).json({ error: '게임을 찾을 수 없습니다.' });
-        }
-
-        res.status(200).json({ pollutionLevel: game.pollution_level });
-    } catch (error) {
-        console.error('게임 상태 조회 오류:', error);
-        res.status(500).json({ error: '게임 상태 조회에 실패했습니다.' });
-    }
-};
-
-// 공장 건설
-exports.buildFactory = async (req, res) => {
-    try {
-        const { gameId } = req.params;
-        const { factoryType, location } = req.body;
-
-        // 공장 데이터 삽입
-        const [factory] = await db('factories').insert({
-            game_id: gameId,
-            factory_type: factoryType,
-            location_x: location.x,
-            location_y: location.y,
-            level: 1,
-            production_rate: 100,
-            pollution_rate: 1,
-            created_at: db.fn.now(),
-        }).returning('*');
-
-        res.status(201).json(factory);
-    } catch (error) {
-        console.error('공장 건설 오류:', error.message);
-        res.status(500).json({ error: '공장 건설에 실패했습니다.' });
-    }
+    // 참여 중인 플레이어 목록
+    const players = await GamePlayer.getPlayersInGame(gameId);
+    return res.status(200).json({
+      id: game.id,
+      name: game.name,
+      mapWidth: game.mapWidth,
+      mapHeight: game.mapHeight,
+      gameMode: game.gameMode,
+      maxPlayers: game.maxPlayers,
+      pollutionLevel: game.pollution_level,
+      players: players.map((p) => ({
+        userId: p.user_id,
+        joinedAt: p.joined_at,
+      })),
+    });
+  } catch (error) {
+    console.error('게임 정보 조회 오류:', error.message);
+    return res.status(500).json({ error: '게임 정보 조회에 실패했습니다.' });
+  }
 };
