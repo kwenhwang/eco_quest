@@ -13,7 +13,7 @@ describe('Game API Tests', () => {
   beforeEach(async () => {
     // 테스트용 유저 생성 (게임 생성/참여에 필요할 경우)
     testUser = await request(app)
-      .post('/users/register')
+      .post('/api/users/register')
       .send({
         username: 'testuser',
         password: 'testpass',
@@ -22,7 +22,7 @@ describe('Game API Tests', () => {
 
     // 테스트용 게임 생성 (상태 조회 테스트 등에 필요)
     await request(app)
-      .post('/games')
+      .post('/api/games')
       .send({
         name: 'Test Game',
         mapWidth: 50,
@@ -35,7 +35,7 @@ describe('Game API Tests', () => {
   describe('Game Creation', () => {
     it('should create a new game', async () => {
       const response = await request(app)
-        .post('/games')
+        .post('/api/games')
         .send({
           name: 'New Test Game',
           mapWidth: 50,
@@ -52,7 +52,7 @@ describe('Game API Tests', () => {
   describe('Game Status', () => {
     it('should retrieve game status', async () => {
       const response = await request(app)
-        .get('/games/1/status');
+        .get('/api/games/1/status');
       
       expect(response.status).toBe(200);
       expect(response.body.pollutionLevel).toBeDefined();
@@ -62,7 +62,7 @@ describe('Game API Tests', () => {
   describe('Game Players', () => {
     it('should allow a user to join a game', async () => {
       const response = await request(app)
-        .post('/games/1/join')
+        .post('/api/games/1/join')
         .send({
           userId: testUser.body.userId
         });
@@ -74,14 +74,14 @@ describe('Game API Tests', () => {
     it('should allow a user to leave a game', async () => {
       // 먼저 게임 참여
       await request(app)
-        .post('/games/1/join')
+        .post('/api/games/1/join')
         .send({
           userId: testUser.body.userId
         });
 
       // 게임 나가기 테스트
       const response = await request(app)
-        .post('/games/1/leave')
+        .post('/api/games/1/leave')
         .send({
           userId: testUser.body.userId
         });
@@ -94,7 +94,7 @@ describe('Game API Tests', () => {
   describe('Game Information', () => {
     it('should retrieve complete game information', async () => {
       const response = await request(app)
-        .get('/games/1/info');
+        .get('/api/games/1/info');
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('id');
